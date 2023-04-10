@@ -1,4 +1,4 @@
-// Dead_Lock
+// Dead_Lock_Free
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
