@@ -1,0 +1,68 @@
+// Dead_Lock
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define MAX_INGREDIENTS 100
+#define MAX_THREADS 100
+
+int ingredients[MAX_INGREDIENTS];
+pthread_mutex_t mutex[MAX_INGREDIENTS];
+int num_chefs, max_claims;
+
+void* chef(void* arg) {
+    int i, j, num_ingredients_claimed = 0;
+    int* thread_num = (int*) arg;
+
+    while (num_ingredients_claimed < max_claims) {
+        for (i = 0; i < MAX_INGREDIENTS; i++) {
+            if (pthread_mutex_trylock(&mutex[i]) == 0) {
+                if (ingredients[i] > 0) {
+                    ingredients[i]--;
+                    num_ingredients_claimed++;
+                    printf("Chef %d claimed ingredient %d\n", *thread_num, i);
+                }
+                pthread_mutex_unlock(&mutex[i]);
+            }
+        }
+    }
+
+    printf("Chef %d claimed %d ingredients\n", *thread_num, num_ingredients_claimed);
+    pthread_exit(NULL);
+}
+
+int main() {
+    int i, j, total_ingredients = 0;
+    pthread_t thread[MAX_THREADS];
+    int thread_num[MAX_THREADS];
+
+    printf("Enter the number of chefs: ");
+    scanf("%d", &num_chefs);
+
+    printf("Enter the maximum number of claims per chef: ");
+    scanf("%d", &max_claims);
+
+    printf("Enter the number of ingredients: ");
+    scanf("%d", &total_ingredients);
+
+    for (i = 0; i < total_ingredients; i++) {
+        printf("Enter the number of jars for ingredient %d: ", i);
+        scanf("%d", &ingredients[i]);
+        pthread_mutex_init(&mutex[i], NULL);
+    }
+
+    for (i = 0; i < num_chefs; i++) {
+        thread_num[i] = i;
+        pthread_create(&thread[i], NULL, chef, &thread_num[i]);
+    }
+
+    for (i = 0; i < num_chefs; i++) {
+        pthread_join(thread[i], NULL);
+    }
+
+    for (i = 0; i < total_ingredients; i++) {
+        pthread_mutex_destroy(&mutex[i]);
+    }
+
+    return 0;
+}
